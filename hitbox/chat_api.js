@@ -5,9 +5,10 @@ var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 Promise.promisifyAll(request);
 
-function ChatAPI(client, channel) {
+function ChatAPI(client, channel, color) {
   this.client = client;
   this.channel = channel;
+  this.color = color;
   this.websocket = null;
   EventEmitter.call(this);
 };
@@ -71,19 +72,19 @@ ChatAPI.prototype.JoinServer = function() {
 };
 
 ChatAPI.prototype.SendMessage = function(message) {
-  var loginCommand = {
+  var chatMessage = {
     name: "message",
     args: [{
       method: "chatMsg",
       params: {
         "channel":this.channel,
         "name":this.client.username,
-        "nameColor":"FF0000",
-        "text":message.text
+        "nameColor":this.color,
+        "text":message
       }
     }]
   }
-  var payload = "5:::" + JSON.stringify(loginCommand);
+  var payload = "5:::" + JSON.stringify(chatMessage);
   this.websocket.send(payload);
 }
 

@@ -11,17 +11,15 @@ var client = new Client(process.env.USERNAME, process.env.PASSWORD);
 
 var ChatAPI = require('./hitbox/chat_api.js');
 
+var CommandParser = require('./command_parser.js');
+
 client.Login().then(function() {
-  var chatAPI = new ChatAPI(client, process.env.CHANNEL);
-  require('./command_parser.js')(chatAPI);
+  var chatAPI = new ChatAPI(client, process.env.CHANNEL, "FF0000");
+  new CommandParser(chatAPI);
   chatAPI.on("message", handleMessage);
   chatAPI.on("join", handleJoin);
   rl.on('line', function(line) {
-   var message = {
-     color: "0xff0000",
-     text: line
-   };
-   chatAPI.SendMessage(message);
+   chatAPI.SendMessage(line);
 });
   chatAPI.JoinServer();
 }, function() {
