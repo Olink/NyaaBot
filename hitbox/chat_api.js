@@ -81,8 +81,8 @@ ChatAPI.prototype.SendMessage = function(message) {
       params: {
         "channel":this.channel,
         "name":this.client.username,
-        "text":message.text,
-        "time":Date.now() / 1000
+        "nameColor":"FF0000",
+        "text":message.text
       }
     }]
   }

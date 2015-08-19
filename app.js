@@ -15,7 +15,7 @@ var ChatAPI = require('./hitbox/chat_api.js');
 
 client.Login().then(function() {
   console.log("Logged in: " + client.authToken);
-  var chatAPI = new ChatAPI(client, process.env.PASSWORD.CHANNEL);
+  var chatAPI = new ChatAPI(client, process.env.CHANNEL);
   chatAPI.on("message", handleMessage);
   chatAPI.on("join", handleJoin);
   rl.on('line', function(line) {
