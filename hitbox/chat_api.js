@@ -47,17 +47,14 @@ ChatAPI.prototype.JoinServer = function() {
             }]
           }
           var payload = "5:::" + JSON.stringify(loginCommand);
-          console.log(payload);
           ws.send(payload);
         } else if (message.lastIndexOf('5:::', 0) === 0) {
-          console.log(message);
           var payload = message.substr(message.indexOf('5:::') + 4);
           var jsonObject = JSON.parse(payload)['args'];
           for(var i = 0, len = jsonObject.length; i < len; i++) {
             var obj = JSON.parse(jsonObject[i]);
             var method = obj['method'];
             if (method === 'chatMsg') {
-              console.log(obj);
               chat.emit("message", obj);
             } else {
               console.log(obj);
@@ -87,7 +84,6 @@ ChatAPI.prototype.SendMessage = function(message) {
     }]
   }
   var payload = "5:::" + JSON.stringify(loginCommand);
-  console.log(payload);
   this.websocket.send(payload);
 }
 

@@ -24,11 +24,9 @@ Client.prototype.Login = function() {
       url: client.hitboxApi + '/auth/token',
       form: loginArgs
     };
-
-    console.log(loginOptions);
+    
     request.postAsync(loginOptions).spread(function (resp, body) {
       var respObj = JSON.parse(body);
-      //console.log(respObj);
       var authToken = respObj.authToken;
       var verifyArgs = {
         app: "desktop",
@@ -42,7 +40,6 @@ Client.prototype.Login = function() {
 
       request.postAsync(verifyOptions).spread(function (resp, body) {
         var verifyObj = JSON.parse(body);
-        //console.log(verifyObj);
         if (verifyObj.user_id) {
           client.authToken = authToken;
           resolve();
@@ -59,19 +56,15 @@ Client.prototype.FetchSocketServers = function() {
   var api = this.hitboxApi;
   return new Promise(function(resolve) {
     request.getAsync(api + '/chat/servers?redis=true', {encoding: null}).spread(function (resp, body) {
-      //console.log(resp);
       var url = "";
       if (resp.headers['content-encoding']) {
-        //console.log(resp.headers['content-encoding'])
         if (resp.headers['content-encoding'] === 'gzip') {
           zlib.gunzip(body, function(err, dezipped) {
-            console.log(dezipped.toString());
             var url = JSON.parse(dezipped.toString());
             resolve(url);
           });
         }
       } else {
-        console.log(body);
         var url = JSON.parse(body);
         resolve(url);
       }
