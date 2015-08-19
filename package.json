@@ -1,0 +1,17 @@
+{
+  "name": "hitbox-bot",
+  "version": "0.1.0",
+  "private": true,
+  "author": "Nyx Studios",
+  "description": "A bot that mods Hitbox Chat",
+  "dependencies": {
+    "ws": "*",
+    "request": "*",
+    "bluebird": "*",
+    "datejs": "*",
+    "readline": "*"
+  },
+  "engines": {
+    "node": "0.12.x"
+  }
+}
