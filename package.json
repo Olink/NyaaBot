@@ -8,9 +8,10 @@
     "ws": "*",
     "request": "*",
     "bluebird": "*",
-    "datejs": "*",
+    "datejs": "1.0.0-rc3",
     "readline": "*",
-    "minimist": "*"
+    "hiredis": "*",
+    "redis": "*"
   },
   "engines": {
     "node": "0.12.x"

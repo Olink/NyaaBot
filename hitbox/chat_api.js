@@ -5,15 +5,35 @@ var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 Promise.promisifyAll(request);
 
+var UserStore = require('../user_store.js');
+
 function ChatAPI(client, channel, color) {
   this.client = client;
   this.channel = channel;
   this.color = color;
   this.websocket = null;
+  this.waitingForUser = {};
+  this.ready = false;
   EventEmitter.call(this);
 };
 
 util.inherits(ChatAPI, EventEmitter);
+
+ChatAPI.prototype.LookupUser = function(name) {
+  var chat = this;
+  var userQuery = {
+    name: "message",
+    args: [{
+      method: "getChannelUser",
+      params: {
+        channel: chat.channel,
+        name: name
+      }
+    }]
+  }
+  var payload = "5:::" + JSON.stringify(userQuery);
+  chat.websocket.send(payload);
+}
 
 ChatAPI.prototype.JoinServer = function() {
   var client = this.client;
@@ -56,7 +76,59 @@ ChatAPI.prototype.JoinServer = function() {
             var obj = JSON.parse(jsonObject[i]);
             var method = obj['method'];
             if (method === 'chatMsg') {
-              chat.emit("message", obj);
+              ///ignore our own messages
+              if (obj['params']['name'] === client.username) {
+                return;
+              }
+              
+              if (!UserStore.Fetch(obj['params']['name'])) {
+                if (!chat.waitingForUser[obj['params']['name']]) {
+                  chat.waitingForUser[obj['params']['name']] = [];
+                  chat.waitingForUser[obj['params']['name']].push(obj);
+                  chat.LookupUser(obj['params']['name']);
+                  console.log("looking up user.");
+                } else {
+                  chat.waitingForUser[obj['params']['name']].push(obj);
+                }
+              } else {
+                //decode unicode text
+                var i = 0;
+                var newMessage = "";
+                var code = ReadChar(obj['params']['text'], i++);
+                while (code) {
+                  newMessage += String.fromCharCode(code);
+                  code = ReadChar(obj['params']['text'], i++);
+                }
+                //store unicode decoded message instead of original message
+                obj['params']['text'] = newMessage;
+                chat.emit('message', obj);
+              }
+            } else if (method === 'loginMsg'){ 
+              //Notifiy the channel that the bot has joined.
+              if (obj['params']['name'] === client.username) {
+                chat.SendMessage("Nyaa~~~");
+                chat.ready = true;
+              }
+              console.log(obj);
+            } else if (method === 'userInfo') {
+              UserStore.Store(obj['params'])
+              console.log(obj);
+              console.log("retrieved user.");
+              var backlog = chat.waitingForUser[obj['params']['name']];
+              for (var j = 0; j < backlog.length; j++) {
+                var obj2 = chat.waitingForUser[obj['params']['name']][j];
+                var i = 0;
+                var newMessage = "";
+                var code = ReadChar(obj2['params']['text'], i++);
+                while (code) {
+                  newMessage += String.fromCharCode(code);
+                  code = ReadChar(obj2['params']['text'], i++);
+                }
+                //store unicode decoded message instead of original message
+                obj2['params']['text'] = newMessage;
+                chat.emit('message', obj2);
+              }
+              delete chat.waitingForUser[obj['params']['name']];
             } else {
               console.log(obj);
             }
@@ -86,6 +158,34 @@ ChatAPI.prototype.SendMessage = function(message) {
   }
   var payload = "5:::" + JSON.stringify(chatMessage);
   this.websocket.send(payload);
+}
+
+function ReadChar(str, idx) {
+  // ex. fixedCharCodeAt('\uD800\uDC00', 0); // 65536
+  // ex. fixedCharCodeAt('\uD800\uDC00', 1); // false
+  idx = idx || 0;
+  var code = str.charCodeAt(idx);
+  var hi, low;
+  
+  // High surrogate (could change last hex to 0xDB7F to treat high
+  // private surrogates as single characters)
+  if (0xD800 <= code && code <= 0xDBFF) {
+    hi = code;
+    low = str.charCodeAt(idx + 1);
+    if (isNaN(low)) {
+      throw 'High surrogate not followed by low surrogate in fixedCharCodeAt()';
+    }
+    return ((hi - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;
+  }
+  if (0xDC00 <= code && code <= 0xDFFF) { // Low surrogate
+    // We return false to allow loops to skip this iteration since should have
+    // already handled high surrogate above in the previous iteration
+    return false;
+    /*hi = str.charCodeAt(idx - 1);
+    low = code;
+    return ((hi - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;*/
+  }
+  return code;
 }
 
 module.exports = ChatAPI;
